@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Link Checker</title>
+  <style>
+    table, th, td {
+      border: 1px solid black;
+      border-collapse: collapse;
+      padding: 5px;
+    }
+    th, td {
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <h1>Link Checker</h1>
+  <form id="linkForm">
+    <label for="urls">URLs (comma-separated):</label><br>
+    <textarea id="urls" name="urls" rows="4" cols="50"></textarea><br><br>
+    <label for="depth">Depth:</label>
+    <input type="number" id="depth" name="depth" min="1" value="1"><br><br>
+    <input type="submit" value="Check Inner Links">
+  </form>
+  <br>
+  <table id="resultsTable" style="display:none;">
+    <thead>
+      <tr>
+        <th>Page URL</th>
+        <th>Depth</th>
+        <th>Link Count</th>
+        <th>Inner Links</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    document.getElementById('linkForm').addEventListener('submit', async function(event) {
+      event.preventDefault();
+      const urls = document.getElementById('urls').value.split(',').map(url => url.trim());
+      const depth = parseInt(document.getElementById('depth').value, 10);
+
+      const response = await fetch('http://localhost:3000/check-links', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ urls, depth })
+      });
+
+      const results = await response.json();
+      const tableBody = document.getElementById('resultsTable').querySelector('tbody');
+      tableBody.innerHTML = '';
+
+      results.forEach(result => {
+        const row = tableBody.insertRow();
+        const pageUrlCell = row.insertCell(0);
+        const depthCell = row.insertCell(1);
+        const linkCountCell = row.insertCell(2);
+        const innerLinksCell = row.insertCell(3);
+
+        pageUrlCell.textContent = result.pageUrl;
+        depthCell.textContent = result.depth || '-';
+        linkCountCell.textContent = result.linkCount || '0';
+        innerLinksCell.textContent = result.links.length > 0 ? result.links.join(', ') : 'No links found';
+
+        if (result.error) {
+          const errorCell = row.insertCell(4);
+          errorCell.textContent = result.error;
+        }
+      });
+
+      document.getElementById('resultsTable').style.display = 'table';
+    });
+  </script>
+</body>
+</html>
+
+
